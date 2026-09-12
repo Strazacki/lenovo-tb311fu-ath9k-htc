@@ -109,20 +109,23 @@ This guide addresses common errors and issues encountered when loading and using
 
 ## 4. Wireless Interface & Monitor Mode Issues
 
-### Issue: `phy1` not present after loading modules
+### Issue: External PHY not present after loading modules
 - **Diagnosis**:
   `ath9k_htc` firmware upload and probe is asynchronous.
   Run `dmesg | grep -i ath9k_htc` to see if firmware download completed.
 - **Resolution**:
-  Wait 2–3 seconds after `insmod ath9k_htc.ko` before checking `iw phy` or `iw dev`.
+  Wait 2–3 seconds after `insmod ath9k_htc.ko` before checking `iw phy` or `iw dev`. Note that the external PHY number is dynamically assigned by the kernel (it was observed as `phy2` during the tested session).
 
 ### Issue: Monitor interface creation fails with `Device or resource busy` (-EBUSY)
 - **Diagnosis**:
   Android NetworkStack / wpa_supplicant might be trying to manage the new interface.
 - **Resolution**:
-  Bring down any managed interface created automatically on the new phy before creating `mon1`:
+  Bring down any interface created automatically on the external PHY before configuring monitor mode:
   ```bash
   ip link set <interface_name> down
-  iw phy phy1 interface add mon1 type monitor
-  ip link set mon1 up
+  # Configure existing interface as monitor:
+  iw dev <interface_name> set type monitor
+  # Or add a dedicated monitor interface:
+  # iw phy <phyname> interface add mon1 type monitor
+  ip link set <interface_name> up
   ```

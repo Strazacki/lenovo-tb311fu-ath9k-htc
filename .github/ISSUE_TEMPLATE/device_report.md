@@ -17,8 +17,8 @@ assignees: ''
 - [ ] Firmware upload (htc_9271-1.4.0.fw loaded)
 - [ ] HTC initialization (33 credits)
 - [ ] Module loaded (`insmod ath9k_htc.ko` returned 0)
-- [ ] `phy1` visible in `iw phy`
-- [ ] Monitor mode interface created (`mon1`)
+- [ ] External PHY visible in `iw phy` (e.g. `phy2`)
+- [ ] Monitor mode activated (e.g. `wlan1` set to monitor)
 - [ ] Raw packet capture tested (tcpdump / airodump-ng)
 - [ ] Packet injection tested (aireplay-ng)
 

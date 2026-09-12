@@ -49,7 +49,8 @@ This document details device, kernel, toolchain, and hardware compatibility for 
   - TP-Link TL-WN722N **v1 only** (v2 and v3 use Realtek RTL8188EUS/EU chipsets and are incompatible with ath9k_htc)
 - **Driver**: `ath9k_htc` (requires dependency stack: `ath`, `ath9k_hw`, `ath9k_common`, `cfg80211`, `mac80211`, `rfkill`)
 - **Firmware**: `ath9k_htc/htc_9271-1.4.0.fw` (Version 1.4, 51,008 bytes; deployed via Magisk overlay at `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`)
-- **Target PHY Identifier**: `phy1` (registered once `ath9k_htc` successfully probes)
+- **Target PHY Identifier**: External PHY (observed as `phy2` during the tested session; PHY numbering is dynamically assigned by the kernel)
+- **Observed Interface**: `wlan1` (observed during testing; interface naming is dynamic)
 
 ---
 
@@ -66,6 +67,11 @@ This document details device, kernel, toolchain, and hardware compatibility for 
 | **EEPROM/regulatory initialization** | **CONFIRMED** | EEPROM regdomain 0x0 read; mapped to regdmn/regpair 0x3a (US) |
 | **Base module loading** | **CONFIRMED** | `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko` loaded cleanly |
 | **Original wiphy_register failure** | **CONFIRMED** | Stock `ath9k_htc` failed at `wiphy_register()` with `-EINVAL` (-22) |
+| **Patched ath9k_htc module loading** | **CONFIRMED** | Patched module loaded cleanly on physical hardware |
+| **Patched wiphy registration** | **CONFIRMED** | `wiphy_register()` completed successfully with patched driver |
+| **External PHY** | **CONFIRMED** | External PHY registered cleanly (observed as `phy2` during tested session; PHY numbering is dynamic) |
+| **Monitor mode** | **CONFIRMED** | `iw phy` reported monitor mode support; interface (`wlan1`) configured into monitor mode on channel 6 (2437 MHz) |
+| **Passive packet capture** | **CONFIRMED** | Captured 20 IEEE802_11_RADIO packets (beacons, ACKs, data) via `tcpdump`; 203 packets received by filter, 0 dropped |
 
 ### STATICALLY VERIFIED (Build & ABI Validation)
 | Property / Metric | Status | Details |
@@ -82,7 +88,4 @@ This document details device, kernel, toolchain, and hardware compatibility for 
 ### NOT YET VERIFIED ON DEVICE (Runtime Device Validation)
 | Operation / Feature | Status | Details |
 |---|---|---|
-| **Patched wiphy registration** | **NOT YET VERIFIED ON DEVICE** | Awaiting runtime `insmod` of patched module on physical device |
-| **phy1** | **NOT YET VERIFIED ON DEVICE** | Pending appearance of second PHY in `iw phy` |
-| **Monitor mode** | **NOT YET VERIFIED ON DEVICE** | Pending creation and activation of `mon1` |
-| **Packet injection** | **NOT YET VERIFIED ON DEVICE** | Pending verification with injection tools |
+| **Packet injection** | **NOT YET VERIFIED** | Pending verification with injection tools (attempted `aircrack-ng` installation failed due to unavailable Termux mirrors) |

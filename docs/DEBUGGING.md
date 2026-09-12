@@ -120,30 +120,40 @@ iw phy
 iw dev
 ```
 
-Look for a new physical device, e.g. `phy1`, in addition to the tablet's built-in `phy0`.
+Look for a new external physical device (observed as `phy2` during testing; PHY numbering is dynamic), in addition to the tablet's built-in `phy0`. The corresponding wireless interface was observed as `wlan1` during testing (interface names are dynamic).
 
 ---
 
 ## 7. Monitor Mode Validation Workflow
 
-When `phy1` is successfully registered:
+When the external PHY is successfully registered:
 
 ```bash
-# 1. Inspect supported modes on phy1
-iw phy phy1 info | grep -A 10 "Supported interface modes"
+# 1. Inspect supported modes on external PHY (e.g. phy2)
+iw phy <phyname> info | grep -A 10 "Supported interface modes"
 
-# 2. Add monitor mode interface
-iw phy phy1 interface add mon1 type monitor
+# 2. Switch interface to monitor mode (or add monitor interface)
+ip link set <ifname> down
+iw dev <ifname> set type monitor
+ip link set <ifname> up
 
-# 3. Bring interface UP
-ip link set mon1 up
+# 3. Set channel (e.g. channel 6 / 2437 MHz)
+iw dev <ifname> set channel 6
 
 # 4. Verify link status
-ip link show mon1
+ip link show <ifname>
 ```
 
-If `ip link set mon1 up` succeeds, packets can be monitored using tools like `tcpdump`:
+### Confirmed Passive Packet Capture
+Passive packet capture was verified on the physical Lenovo TB311FU using `tcpdump` on `wlan1`:
 
 ```bash
-tcpdump -i mon1 -vv -e
+adb shell su -c 'tcpdump -i wlan1 -e -s 256 -c 20'
 ```
+
+Output confirmed:
+- 20 `IEEE802_11_RADIO` packets captured (including beacons, acknowledgments, and data frames)
+- 203 packets received by filter
+- 0 packets dropped
+
+*Note*: Packet injection remains **NOT YET VERIFIED** (an attempt to install `aircrack-ng` via Termux failed because Termux package mirrors were unreachable).

@@ -39,6 +39,11 @@ Atheros AR9271 / ath9k_htc USB Wi-Fi support for Lenovo Tab TB311FU running stoc
 | **EEPROM/regulatory initialization** | **CONFIRMED** | EEPROM regdomain 0x0 read; mapped to regdmn/regpair 0x3a (US) |
 | **Base module loading** | **CONFIRMED** | `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko` loaded successfully |
 | **Original wiphy_register failure** | **CONFIRMED** | Stock driver failed at `wiphy_register()` with `-EINVAL` (-22) |
+| **Patched ath9k_htc module loading** | **CONFIRMED** | Patched module loaded successfully on physical TB311FU |
+| **Patched wiphy registration** | **CONFIRMED** | `wiphy_register()` completed successfully with patched driver |
+| **External PHY** | **CONFIRMED** | External PHY registered cleanly (observed as `phy2` during tested session; PHY numbering is dynamic) |
+| **Monitor mode** | **CONFIRMED** | `iw phy` reported monitor mode support; interface switched to monitor mode on channel 6 (2437 MHz) |
+| **Passive packet capture** | **CONFIRMED** | Captured 20 IEEE802_11_RADIO packets via `tcpdump` (beacons, ACKs, data; 203 received by filter, 0 dropped) |
 
 ### STATICALLY VERIFIED (Build & ABI Validation)
 | Property / Metric | Status | Details |
@@ -55,13 +60,10 @@ Atheros AR9271 / ath9k_htc USB Wi-Fi support for Lenovo Tab TB311FU running stoc
 ### NOT YET VERIFIED ON DEVICE (Runtime Device Validation)
 | Operation / Feature | Status | Details |
 |---|---|---|
-| **Patched wiphy registration** | **NOT YET VERIFIED ON DEVICE** | Requires runtime `insmod` of patched module on tablet |
-| **phy1** | **NOT YET VERIFIED ON DEVICE** | Pending appearance of second PHY in `iw phy` |
-| **Monitor mode** | **NOT YET VERIFIED ON DEVICE** | Pending creation and activation of `mon1` |
-| **Packet injection** | **NOT YET VERIFIED ON DEVICE** | Pending verification with injection tools |
+| **Packet injection** | **NOT YET VERIFIED** | Pending verification with injection tools (attempted `aircrack-ng` installation failed due to unavailable Termux mirrors) |
 
 > [!NOTE]
-> The internal tablet Wi-Fi driver (`wlan_drv_gen4m_6768`, registering `phy0`) does **not** support monitor mode. External USB Wi-Fi via `ath9k_htc` (`phy1`) is intended to bring monitor mode capability to this tablet.
+> The internal tablet Wi-Fi driver (`wlan_drv_gen4m_6768`, registering `phy0`) does **not** support monitor mode. External USB Wi-Fi via `ath9k_htc` brings confirmed monitor mode capability to this tablet.
 
 ---
 
@@ -107,8 +109,8 @@ if (WARN_ON((wiphy->interface_modes & types) != types))
 
 This validation triggers a kernel warning backtrace and causes `wiphy_register()` to return `-EINVAL` (-22). Consequently:
 - `ath9k_htc` probe aborts with error `-22`.
-- No secondary wireless physical device (`phy1`) is created.
-- Only the built-in MediaTek `phy0` remains active.
+- No external wireless physical device was registered prior to applying the patch.
+- Only the built-in MediaTek `phy0` remained active.
 
 ---
 
@@ -199,7 +201,7 @@ uname -r
 # 2. Check module vermagic and dependencies
 modinfo /path/to/ath9k_htc.ko
 
-# 3. Check physical wireless chips (expect phy0 and phy1)
+# 3. Check physical wireless chips (expect phy0 and external PHY, e.g. phy2)
 iw phy
 
 # 4. Check wireless interfaces
@@ -213,24 +215,47 @@ dmesg | grep -iE "(ath|htc|0cf3|wiphy)"
 
 ## Monitor Mode
 
-Once `phy1` appears in `iw phy`, monitor mode can be configured:
+Once the external PHY appears in `iw phy` (observed as `phy2` during the tested session; PHY numbering is dynamic and not fixed), monitor mode can be configured on the interface (observed as `wlan1` during testing; interface naming is dynamic):
 
 ```bash
-# 1. Inspect supported modes on phy1
-iw phy phy1 info
+# 1. Inspect supported modes on external PHY
+iw phy <phyname> info
 
-# 2. Add monitor interface
-iw phy phy1 interface add mon1 type monitor
+# 2. Switch interface to monitor mode
+ip link set <ifname> down
+iw dev <ifname> set type monitor
+ip link set <ifname> up
 
-# 3. Bring interface UP
-ip link set mon1 up
+# 3. Set channel (e.g. channel 6 / 2437 MHz)
+iw dev <ifname> set channel 6
 
 # 4. Verify link status
-ip link show mon1
+ip link show <ifname>
 ```
 
+### Runtime verification example
+
+Observed during the successful device test:
+
+```text
+phy2
+└── wlan1
+    type monitor
+    channel 6 (2437 MHz)
+```
+
+tcpdump result:
+
+```text
+20 packets captured
+203 packets received by filter
+0 packets dropped
+```
+
+During this test, passive packet capture was performed with `adb shell su -c 'tcpdump -i wlan1 -e -s 256 -c 20'`, capturing 20 `IEEE802_11_RADIO` packets (frame types included beacons, acknowledgments, and data).
+
 > [!IMPORTANT]
-> Packet injection capability has **NOT YET BEEN VERIFIED** on physical hardware. Testing is ongoing.
+> Packet injection capability is **NOT YET VERIFIED**. An attempt to install `aircrack-ng` could not proceed due to unavailable Termux package mirrors, leaving packet injection unverified during this test session.
 
 ---
 

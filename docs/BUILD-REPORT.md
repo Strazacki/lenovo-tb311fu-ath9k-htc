@@ -122,4 +122,4 @@ BTF contains type and debugging information used by eBPF programs. The absence o
 
 - **Build & Static ABI Compliance**: **STATICALLY VERIFIED** (exact vermagic, Android Clang r510928, 168 reference imports, 168 CRC matches, 0 mismatch, 0 missing, patch present in resulting object).
 - **Driver Workaround Implementation**: **STATICALLY VERIFIED** (binary disassembly verified in `htc_drv_init.o`).
-- **Runtime Execution on Device**: **NOT YET VERIFIED ON DEVICE** (patched wiphy registration, phy1, monitor mode, and packet injection have not yet been executed or verified on physical hardware).
+- **Runtime Execution on Device**: **CONFIRMED** on physical Lenovo TB311FU for patched module loading, `wiphy_register()` success, external PHY registration (observed as `phy2` during tested session; PHY numbering is dynamic), `wlan1` interface creation, monitor mode activation on channel 6 (2437 MHz), and passive packet capture via `tcpdump` (20 IEEE802_11_RADIO packets captured, 203 received by filter, 0 dropped). Packet injection remains **NOT YET VERIFIED** (attempted installation of `aircrack-ng` failed due to unavailable Termux mirrors).

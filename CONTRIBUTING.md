@@ -6,11 +6,10 @@ Thank you for your interest in improving Atheros AR9271 / `ath9k_htc` support on
 
 ## 1. How You Can Help
 
-Currently, the most valuable contribution is **hardware runtime testing**:
-- Flashing / test-loading the patched `ath9k_htc.ko` on the TB311FU.
-- Verifying whether `wiphy_register()` completes and `phy1` appears in `iw phy`.
-- Testing monitor mode creation and packet capture tools (tcpdump, airodump-ng).
-- Testing packet injection capabilities.
+While patched module loading, external PHY registration, monitor mode activation, and passive packet capture are confirmed working on the TB311FU, community testing is particularly welcome for:
+- Testing packet injection capabilities with injection tools (e.g. `aireplay-ng`).
+- Testing security toolchains and environments on Android 15.
+- Validating alternate AR9271 hardware revisions and powered USB OTG setups.
 
 ---
 

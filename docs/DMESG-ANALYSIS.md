@@ -22,7 +22,7 @@ sequenceDiagram
     MAC->>MAC: wiphy_register() validates iface_combinations
     Note over MAC: (wiphy->interface_modes & types) != types
     MAC-->>HIF: Return -EINVAL (-22)
-    HIF-->>Host: Probe failed with error -22 (No phy1 registered)
+    HIF-->>Host: Probe failed with error -22 (No external PHY registered)
 ```
 
 ---
@@ -136,7 +136,7 @@ ath9k_htc: probe of 1-1:1.0 failed with error -22
 
 ---
 
-### Phase 8: Absence of phy1
+### Phase 8: Absence of External PHY Prior to Workaround Patch
 Checking wireless devices after the failed probe:
 
 ```text
@@ -162,7 +162,7 @@ Wiphy phy0
 
 - Only `phy0` (internal MediaTek `wlan_drv_gen4m_6768`) is visible.
 - `phy0` does not advertise `monitor` mode.
-- `phy1` was never registered due to the `-EINVAL` rejection in `wiphy_register()`.
+- No external PHY was registered due to the `-EINVAL` rejection in `wiphy_register()`.
 
 ---
 
@@ -171,3 +171,12 @@ Wiphy phy0
 Setting `hw->wiphy->iface_combinations = NULL` and `hw->wiphy->n_iface_combinations = 0` causes `wiphy_register()` to skip the interface combination sanity check completely.
 
 Supported interface types declared in `hw->wiphy->interface_modes` (Station, AP, Ad-Hoc, Mesh, P2P, etc.) remain fully declared, allowing `wiphy_register()` to proceed without triggering the warning or returning `-EINVAL`.
+
+### Confirmed Runtime Results with Patched Module
+When tested on physical Lenovo TB311FU hardware:
+- `wiphy_register()` succeeds cleanly without warning backtrace.
+- An external PHY is successfully registered (observed as `phy2` during the tested session; PHY numbering is dynamic).
+- A wireless network interface is created (observed as `wlan1` during testing; interface naming is dynamic).
+- Monitor mode operation is confirmed on channel 6 (2437 MHz).
+- Passive packet capture via `tcpdump -i wlan1 -e -s 256 -c 20` captured 20 IEEE802_11_RADIO packets (including beacons, ACKs, and data; 203 packets received by filter, 0 dropped).
+- Packet injection remains **NOT YET VERIFIED** (testing could not proceed due to unavailable Termux mirrors preventing `aircrack-ng` installation).

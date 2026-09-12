@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **EEPROM/regulatory initialization**: Confirmed reading EEPROM regdomain `0x0`, mapping default country code to regdmn/regpair `0x3a` (US).
 - **Base module loading**: Confirmed clean loading of `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko`.
 - **Original wiphy_register failure**: Confirmed stock driver failed at `wiphy_register()` with `-EINVAL` (-22).
+- **Patched ath9k_htc module loading**: Confirmed patched module loads successfully on device.
+- **Patched wiphy registration**: Confirmed `wiphy_register()` completed successfully with patched driver.
+- **External PHY registration**: Confirmed external PHY created (observed as `phy2` during the tested session; PHY numbering is dynamic).
+- **Interface creation**: Confirmed network interface creation (observed as `wlan1` during testing; interface naming is dynamic).
+- **Monitor mode**: Confirmed `iw phy` reported monitor mode support; interface activated in monitor mode on channel 6 / 2437 MHz.
+- **Passive packet capture**: Confirmed passive capture with `tcpdump -i wlan1 -e -s 256 -c 20` (20 IEEE802_11_RADIO packets captured including beacons, ACKs, and data; 203 packets received by filter, 0 dropped).
 
 ### Statically Verified Milestones (STATICALLY VERIFIED)
 - **Patched ath9k_htc.ko build**: Built cleanly via isolated Kbuild.
@@ -40,7 +46,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Patch present in object/module**: Disassembly confirms `str xzr` and `str wzr` zeroing `iface_combinations`.
 
 ### Pending Verification (NOT YET VERIFIED ON DEVICE)
-- Runtime verification of `wiphy_register()` success on physical tablet hardware with the patched driver.
-- Detection and activation of `phy1`.
-- Monitor mode interface creation (`mon1`).
-- Raw packet injection.
+- **Packet injection**: Raw packet injection remains unverified (attempted `aircrack-ng` installation failed due to unavailable Termux mirrors).
