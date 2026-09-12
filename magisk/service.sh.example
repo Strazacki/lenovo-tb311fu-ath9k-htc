@@ -1,0 +1,67 @@
+#!/system/bin/sh
+#
+# service.sh - Magisk late-boot service for Atheros AR9271 / ath9k_htc
+#
+MODDIR="${0%/*}"
+[ -z "$MODDIR" ] && MODDIR="/data/adb/modules/tb311fu_ath9k"
+
+LOGFILE="/data/local/tmp/ath9k_magisk.log"
+
+log_msg() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOGFILE"
+}
+
+log_msg "--- TB311FU ath9k_htc boot service started ---"
+
+# Wait for system boot to complete before inserting network drivers
+log_msg "Waiting for Android boot completion..."
+until [ "$(getprop sys.boot_completed)" = "1" ]; do
+    sleep 2
+done
+log_msg "Android boot completed."
+
+# Configure dynamic kernel firmware search path
+FW_DIR="${MODDIR}/firmware"
+if [ -d "$FW_DIR" ] && [ -w /sys/module/firmware_class/parameters/path ]; then
+    echo -n "$FW_DIR" > /sys/module/firmware_class/parameters/path
+    log_msg "Configured firmware search path to: $FW_DIR"
+else
+    log_msg "Warning: Could not configure /sys/module/firmware_class/parameters/path"
+fi
+
+# Kernel modules directory
+MODULES_DIR="${MODDIR}/modules"
+
+# Strict dependency loading order
+load_module() {
+    mod_name="$1"
+    mod_path="${MODULES_DIR}/${mod_name}"
+
+    if [ ! -f "$mod_path" ]; then
+        log_msg "Error: Module file not found: $mod_path"
+        return 1
+    fi
+
+    # Check if already loaded
+    base_name="${mod_name%.ko}"
+    if grep -q "^${base_name} " /proc/modules 2>/dev/null; then
+        log_msg "Module already loaded: $base_name"
+        return 0
+    fi
+
+    log_msg "Inserting module: $mod_name"
+    if insmod "$mod_path" 2>> "$LOGFILE"; then
+        log_msg "Successfully loaded: $base_name"
+        return 0
+    else
+        log_msg "Failed to load: $base_name (check dmesg for details)"
+        return 1
+    fi
+}
+
+load_module "ath.ko"
+load_module "ath9k_hw.ko"
+load_module "ath9k_common.ko"
+load_module "ath9k_htc.ko"
+
+log_msg "--- TB311FU ath9k_htc boot service finished ---"

@@ -1,0 +1,40 @@
+# Compiled Kernel Modules & Objects
+*.ko
+*.o
+*.cmd
+*.mod
+*.mod.c
+*.symvers
+Module.symvers
+modules.order
+
+# Kbuild & Compilation Temporaries
+.tmp_versions/
+.cache/
+build/
+out/
+out-patched/
+release-pkg/
+
+# Backup, logs, and scratch files
+*.bak
+*.old
+*.log
+*.swp
+*~
+.DS_Store
+
+# Compressed Archives & Packages
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.xz
+*.bz2
+
+# Binary Firmware Files (do not commit binary blobs)
+*.fw
+*.bin
+
+# Explicitly ensure patches are tracked
+!patches/*.patch

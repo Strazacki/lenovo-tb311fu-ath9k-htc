@@ -1,0 +1,32 @@
+From f8cecaba4a74056c4f5d567a98d21bc499b90dcd Mon Sep 17 00:00:00 2001
+From: Strazacki <131307428+Strazacki@users.noreply.github.com>
+Date: Sat, 12 Sep 2026 04:19:29 +0200
+Subject: [PATCH] wifi: ath9k_htc: disable iface combinations on TB311FU
+
+Work around cfg80211 wiphy_register() rejection when ath9k_htc registers its interface combinations on the Lenovo TB311FU Android 15 GKI kernel.
+
+Keep the supported interface modes unchanged and disable only the iface_combinations declaration.
+
+This allows further validation of AR9271 initialization and monitor-mode support without modifying the vendor cfg80211/mac80211 modules.
+---
+ drivers/net/wireless/ath/ath9k/htc_drv_init.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/htc_drv_init.c b/drivers/net/wireless/ath/ath9k/htc_drv_init.c
+index fc339079e..49df56356 100644
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_init.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_init.c
+@@ -739,8 +739,8 @@ static void ath9k_set_hw_capab(struct ath9k_htc_priv *priv,
+ 		BIT(NL80211_IFTYPE_MESH_POINT) |
+ 		BIT(NL80211_IFTYPE_OCB);
+ 
+-	hw->wiphy->iface_combinations = &if_comb;
+-	hw->wiphy->n_iface_combinations = 1;
++	hw->wiphy->iface_combinations = NULL;
++	hw->wiphy->n_iface_combinations = 0;
+ 
+ 	hw->wiphy->flags &= ~WIPHY_FLAG_PS_ON_BY_DEFAULT;
+ 
+-- 
+2.47.3
+

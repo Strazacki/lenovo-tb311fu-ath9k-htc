@@ -1,0 +1,6 @@
+id=tb311fu_ath9k
+name=Lenovo TB311FU AR9271 (ath9k_htc) Wi-Fi Support
+version=v1.0.0
+versionCode=100
+author=Community Contributors
+description=Systemless kernel module loader for Atheros AR9271 (ath9k_htc) USB Wi-Fi on Lenovo Tab TB311FU (Android 15 GKI 6.6).

@@ -1,0 +1,49 @@
+name: Repository Integrity Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify No Forbidden Binary Files Committed
+        run: |
+          echo "Checking for committed kernel modules or firmware blobs..."
+          FORBIDDEN=$(find . -type f \( -name "*.ko" -o -name "*.fw" -o -name "*.o" -o -name "*.tar.gz" -o -name "*.zip" \) ! -path "./.git/*")
+          if [ -n "$FORBIDDEN" ]; then
+            echo "Error: Found forbidden binary artifacts in repository:"
+            echo "$FORBIDDEN"
+            exit 1
+          fi
+          echo "No forbidden binary artifacts detected."
+
+      - name: Validate Shell Script Syntax
+        run: |
+          for script in scripts/*.sh; do
+            if [ -f "$script" ]; then
+              echo "Checking syntax for $script..."
+              bash -n "$script"
+            fi
+          done
+
+      - name: Validate Patch Format
+        run: |
+          test -f patches/0001-wifi-ath9k_htc-disable-iface-combinations-on-TB311FU.patch
+          git apply --check --whitespace=warn patches/0001-wifi-ath9k_htc-disable-iface-combinations-on-TB311FU.patch || true
+
+      - name: Validate Reference Symbol Table
+        run: |
+          COUNT=$(wc -l < config/reference-symvers-ath9k_htc.txt)
+          echo "Count of reference symbols: $COUNT"
+          if [ "$COUNT" -ne 168 ]; then
+            echo "Error: Expected exactly 168 reference symbols, found $COUNT"
+            exit 1
+          fi
+          echo "Symbol table integrity verified (168/168 symbols)."
