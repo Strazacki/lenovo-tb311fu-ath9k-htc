@@ -70,20 +70,22 @@ This guide addresses common errors and issues encountered when loading and using
 ### Issue: `firmware: failed to load ath9k_htc/htc_9271-1.4.0.fw (-2)`
 - **Error Code**: `-ENOENT` (-2)
 - **Root Cause**:
-  The kernel firmware loader cannot locate the firmware blob.
-- **Diagnosis**:
+  The Android kernel firmware loader cannot find `ath9k_htc/htc_9271-1.4.0.fw` in default firmware paths (`/vendor/firmware`).
+- **Important Note for Lenovo TB311FU**:
+  Attempting to redirect the firmware path via:
   ```bash
-  cat /sys/module/firmware_class/parameters/path
+  echo -n "/path/to/firmware" > /sys/module/firmware_class/parameters/path
   ```
-  If empty, the kernel will only look in default system directories (which on Android are read-only and lack third-party firmware).
+  **DID NOT WORK** on this tablet, even after disabling SELinux enforcement (`setenforce 0`). Do not attempt to rely on `firmware_class.path`.
 - **Resolution**:
-  1. Create folder `/data/local/tmp/ath9271/ath9k_htc/`.
-  2. Copy `htc_9271-1.4.0.fw` into it.
-  3. Inform the kernel where to look:
-     ```bash
-     echo -n "/data/local/tmp/ath9271" > /sys/module/firmware_class/parameters/path
+  Use the Magisk vendor overlay mechanism:
+  1. Place the firmware blob inside your Magisk module structure at:
+     ```text
+     $MODDIR/system/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw
      ```
-  4. Reload `ath9k_htc.ko`.
+  2. Reboot the tablet.
+  3. Verify that `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw` exists and is readable.
+  4. Load `ath9k_htc.ko`. The driver will locate the firmware immediately.
 
 ---
 

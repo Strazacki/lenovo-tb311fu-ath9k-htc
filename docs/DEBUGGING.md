@@ -8,7 +8,7 @@ This guide provides practical diagnostic procedures for debugging `ath9k_htc` an
 
 1. **Root shell**: Must be elevated root (`su`).
 2. **USB OTG Connection**: Adapter enumerated in `lsusb` / `/sys/bus/usb/devices/`.
-3. **Firmware Path**: `/sys/module/firmware_class/parameters/path` configured.
+3. **Firmware Location**: `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw` deployed via Magisk overlay.
 4. **Dependency Modules**: `cfg80211`, `mac80211`, `rfkill` loaded.
 5. **Module Order**: `ath` -> `ath9k_hw` -> `ath9k_common` -> `ath9k_htc`.
 6. **Kernel Message Log**: Check `dmesg` immediately after `insmod`.
@@ -40,20 +40,22 @@ If the adapter is not shown:
 
 ---
 
-## 3. Configuring the Firmware Loader
+## 3. Firmware Deployment: Magisk Overlay vs. firmware_class.path
 
-Android kernels by default may not look in standard desktop paths like `/lib/firmware`. Configure the kernel's firmware search path at runtime before inserting `ath9k_htc.ko`:
+### Confirmed Method on Lenovo TB311FU: Magisk Vendor Overlay
+The stock Android 15 kernel on Lenovo TB311FU searches `/vendor/firmware` by default. Because the vendor partition is read-only, deploy the firmware using a Magisk module overlay:
 
-```bash
-# Set runtime search directory
-echo -n "/data/local/tmp/ath9271" > /sys/module/firmware_class/parameters/path
-
-# Verify setting
-cat /sys/module/firmware_class/parameters/path
+```text
+/data/adb/modules/<module_id>/system/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw
 ```
 
-Ensure the firmware file is located at:
-`/data/local/tmp/ath9271/ath9k_htc/htc_9271-1.4.0.fw` (or as required by driver: `/data/local/tmp/ath9271/htc_9271-1.4.0.fw`).
+After reboot, verify the file is visible in the vendor filesystem:
+```bash
+ls -l /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw
+```
+
+### Note on `/sys/module/firmware_class/parameters/path`
+Writing to `/sys/module/firmware_class/parameters/path` **DID NOT WORK** on the Lenovo Tab TB311FU, even when tested with SELinux permissive mode (`setenforce 0`). Do not rely on dynamic path modification on this device. It is considered **NOT WORKING ON TESTED TB311FU / UNVERIFIED FALLBACK ONLY**.
 
 ---
 
@@ -87,8 +89,8 @@ insmod ath9k_htc.ko
 ath9k_htc: Firmware ath9k_htc/htc_9271-1.4.0.fw requested
 firmware_class: ath9k_htc/htc_9271-1.4.0.fw: firmware file not found
 ```
-- **Cause**: Kernel firmware search path is missing or firmware filename/subfolder does not match.
-- **Fix**: Place `htc_9271-1.4.0.fw` into `<path>/ath9k_htc/` and update `/sys/module/firmware_class/parameters/path`.
+- **Cause**: Kernel firmware loader cannot find `ath9k_htc/htc_9271-1.4.0.fw` in default vendor search paths.
+- **Fix**: Deploy the firmware through Magisk overlay to `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw` and reboot. (Writing to `/sys/module/firmware_class/parameters/path` is non-functional on TB311FU).
 
 ### Error -8 (`ENOEXEC`: Exec format error)
 ```text

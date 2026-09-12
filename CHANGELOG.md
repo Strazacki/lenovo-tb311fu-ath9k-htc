@@ -22,15 +22,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs/DEBUGGING.md`: Practical step-by-step troubleshooting checklist.
   - `COMPATIBILITY.md`: Hardware, Android 15, and kernel version support matrix.
 
-### Confirmed Milestones
-- **USB Enumeration**: Confirmed working for Atheros AR9271 (`0cf3:9271`).
-- **Firmware Upload**: Confirmed working with open firmware `htc_9271-1.4.0.fw` (51,008 bytes).
-- **HTC Initialization**: Confirmed working with 33 communication credits.
-- **EEPROM / Calibration**: Confirmed reading regdomain `0x64`.
-- **Base Module Stack**: Confirmed clean loading of `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko`.
-- **Workaround Patch ABI Compliance**: 168/168 matching symbol CRCs, 0 mismatches, 0 missing.
+### Confirmed Milestones (CONFIRMED)
+- **USB 0cf3:9271 enumeration**: Confirmed working for Atheros AR9271 (`0cf3:9271`).
+- **Firmware request**: Confirmed requested `ath9k_htc/htc_9271-1.4.0.fw`.
+- **Firmware transfer size 51008**: Confirmed 51,008 bytes streamed to device via Magisk overlay `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`.
+- **FW Version 1.4**: Confirmed target responded with FW Version 1.4 and RMW support ON.
+- **HTC initialization**: Confirmed working with 33 communication credits.
+- **EEPROM/regulatory initialization**: Confirmed reading EEPROM regdomain `0x0`, mapping default country code to regdmn/regpair `0x3a` (US).
+- **Base module loading**: Confirmed clean loading of `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko`.
+- **Original wiphy_register failure**: Confirmed stock driver failed at `wiphy_register()` with `-EINVAL` (-22).
 
-### Pending Verification
+### Statically Verified Milestones (STATICALLY VERIFIED)
+- **Patched ath9k_htc.ko build**: Built cleanly via isolated Kbuild.
+- **Exact vermagic**: Matches `6.6.57-android15-8-g9dfb2bc0c466-ab12845201-4k SMP preempt mod_unload modversions aarch64`.
+- **r510928 compiler**: Android Clang r510928 (LLVM 18.0.0).
+- **Symbol versions**: 168 reference imports, 168 CRC matches, 0 mismatch, 0 missing.
+- **Patch present in object/module**: Disassembly confirms `str xzr` and `str wzr` zeroing `iface_combinations`.
+
+### Pending Verification (NOT YET VERIFIED ON DEVICE)
 - Runtime verification of `wiphy_register()` success on physical tablet hardware with the patched driver.
 - Detection and activation of `phy1`.
-- Monitor mode interface creation (`mon1`) and raw packet capture/injection.
+- Monitor mode interface creation (`mon1`).
+- Raw packet injection.

@@ -179,6 +179,10 @@ Download the official open-ath9k-htc-firmware directly from upstream linux-firmw
   https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/ath9k_htc/htc_9271-1.4.0.fw
 Expected Firmware SHA256:
   78f7d592a95b419a02fde7440f30c606fc31a871cf0ce150ced40d4857173eb0
+
+On Lenovo TB311FU, deploy the firmware via Magisk vendor overlay:
+  /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw
+(Note: writing to /sys/module/firmware_class/parameters/path did NOT work on TB311FU).
 ======================================================================
 EOF
 

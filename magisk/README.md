@@ -17,9 +17,11 @@ tb311fu-ath9k-magisk/
 │   ├── ath9k_hw.ko
 │   ├── ath9k_common.ko
 │   └── ath9k_htc.ko
-└── firmware/                  # Directory containing the open firmware
-    └── ath9k_htc/
-        └── htc_9271-1.4.0.fw
+└── system/                    # Magisk systemless overlay for vendor partition
+    └── vendor/
+        └── firmware/
+            └── ath9k_htc/
+                └── htc_9271-1.4.0.fw
 ```
 
 ---
@@ -37,17 +39,19 @@ The kernel requires that the modules be loaded in strict dependency sequence:
 
 ---
 
-## 3. Firmware Placement & Kernel Search Path
+## 3. Firmware Placement & Magisk Vendor Overlay
 
-The AR9271 USB adapter dynamically requests `ath9k_htc/htc_9271-1.4.0.fw` when plugged in.
+The AR9271 USB adapter dynamically requests `ath9k_htc/htc_9271-1.4.0.fw` upon USB attachment.
 
-The boot script in `service.sh` automatically configures the kernel's dynamic firmware search parameter before inserting the driver:
+### Confirmed Method on TB311FU
+On the Lenovo Tab TB311FU, attempting to redirect the firmware path via `/sys/module/firmware_class/parameters/path` **DID NOT WORK**, even with SELinux in permissive mode.
 
-```sh
-echo -n "/data/adb/modules/tb311fu_ath9k/firmware" > /sys/module/firmware_class/parameters/path
-```
-
-This guarantees the kernel firmware loader can locate the firmware image without altering the read-only vendor partition `/vendor/firmware`.
+The **confirmed working procedure** is deploying the firmware via Magisk's systemless vendor overlay:
+1. Place the firmware blob inside the module directory at:
+   `system/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`
+2. Upon device boot, Magisk automatically overlays this file into:
+   `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`
+3. Because `/vendor/firmware` is the default firmware search location of the GKI kernel, `ath9k_htc` detects and transfers the firmware blob cleanly.
 
 ---
 
@@ -56,10 +60,10 @@ This guarantees the kernel firmware loader can locate the firmware image without
 1. Copy `magisk/module.prop.example` to `module.prop` and customize if desired.
 2. Copy `magisk/service.sh.example` to `service.sh` and ensure executable permissions (`chmod +x service.sh`).
 3. Place your verified `.ko` files into `modules/`.
-4. Place the official `htc_9271-1.4.0.fw` into `firmware/ath9k_htc/`.
+4. Place the official `htc_9271-1.4.0.fw` into `system/vendor/firmware/ath9k_htc/`.
 5. Create a flashable zip:
    ```bash
-   zip -r9 tb311fu-ath9k-magisk.zip module.prop service.sh modules/ firmware/
+   zip -r9 tb311fu-ath9k-magisk.zip module.prop service.sh modules/ system/
    ```
 6. Flash via **Magisk App** -> **Modules** -> **Install from storage**.
 7. Reboot the tablet.

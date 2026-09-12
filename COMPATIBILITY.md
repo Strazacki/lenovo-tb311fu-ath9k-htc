@@ -48,24 +48,41 @@ This document details device, kernel, toolchain, and hardware compatibility for 
   - Alfa AWUS036NHA (AR9271 chipset)
   - TP-Link TL-WN722N **v1 only** (v2 and v3 use Realtek RTL8188EUS/EU chipsets and are incompatible with ath9k_htc)
 - **Driver**: `ath9k_htc` (requires dependency stack: `ath`, `ath9k_hw`, `ath9k_common`, `cfg80211`, `mac80211`, `rfkill`)
-- **Firmware**: `ath9k_htc/htc_9271-1.4.0.fw` (Version 1.4, 51,008 bytes)
+- **Firmware**: `ath9k_htc/htc_9271-1.4.0.fw` (Version 1.4, 51,008 bytes; deployed via Magisk overlay at `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`)
 - **Target PHY Identifier**: `phy1` (registered once `ath9k_htc` successfully probes)
 
 ---
 
 ## 4. Feature Status Matrix
 
-| Component / Feature | Validation Status | Evidence / Notes |
+### CONFIRMED (Hardware & Runtime on Lenovo TB311FU)
+| Operation / Check | Status | Details |
 |---|---|---|
-| **USB Enumeration** | **CONFIRMED** | Device `0cf3:9271` enumerated cleanly over USB-OTG |
-| **Firmware Request & Transfer** | **CONFIRMED** | 51,008 bytes streamed to device via bulk OUT endpoint |
-| **Firmware v1.4 Execution** | **CONFIRMED** | Target responded with FW Version 1.4 and RMW support ON |
-| **HTC Protocol Initialization** | **CONFIRMED** | HTC initialized with 33 credits |
-| **EEPROM / Regdomain Read** | **CONFIRMED** | Read regpair `0x64` from adapter EEPROM |
-| **ath9k_htc Module Loading** | **CONFIRMED** | Loaded cleanly with matching vermagic and symbol CRCs |
-| **Original cfg80211 Registration Bug**| **CONFIRMED** | Stock `ath9k_htc` failed at `wiphy_register()` with `-EINVAL` |
-| **Workaround Patch Build & ABI** | **CONFIRMED / TESTED** | Clean Kbuild, 168/168 matching CRCs, disassembly verified |
-| **Patched wiphy Registration** | **NOT YET VERIFIED** | Awaiting device runtime `insmod` verification |
-| **phy1 Interface Appearance** | **NOT YET VERIFIED** | Awaiting device runtime verification |
-| **Monitor Mode (`mon1`)** | **NOT YET VERIFIED** | Awaiting device runtime verification |
-| **Packet Injection** | **NOT YET VERIFIED** | Awaiting device runtime verification |
+| **USB 0cf3:9271 enumeration** | **CONFIRMED** | Device `0cf3:9271` enumerated cleanly over USB-OTG |
+| **Firmware request** | **CONFIRMED** | Driver requested `ath9k_htc/htc_9271-1.4.0.fw` |
+| **Firmware transfer size 51008** | **CONFIRMED** | 51,008 bytes streamed to device via bulk OUT endpoint |
+| **FW Version 1.4** | **CONFIRMED** | Target responded with FW Version 1.4 and RMW support ON |
+| **HTC initialized with 33 credits** | **CONFIRMED** | HTC credit handshake established |
+| **EEPROM/regulatory initialization** | **CONFIRMED** | EEPROM regdomain 0x0 read; mapped to regdmn/regpair 0x3a (US) |
+| **Base module loading** | **CONFIRMED** | `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko` loaded cleanly |
+| **Original wiphy_register failure** | **CONFIRMED** | Stock `ath9k_htc` failed at `wiphy_register()` with `-EINVAL` (-22) |
+
+### STATICALLY VERIFIED (Build & ABI Validation)
+| Property / Metric | Status | Details |
+|---|---|---|
+| **Patched ath9k_htc.ko build** | **STATICALLY VERIFIED** | Built cleanly via isolated Kbuild |
+| **Exact vermagic** | **STATICALLY VERIFIED** | Matches `6.6.57-android15-8-g9dfb2bc0c466-ab12845201-4k SMP preempt mod_unload modversions aarch64` |
+| **r510928 compiler** | **STATICALLY VERIFIED** | Android Clang r510928 (LLVM 18.0.0) |
+| **168 reference imports** | **STATICALLY VERIFIED** | Exactly 168 imported symbols in `__versions` |
+| **168 CRC matches** | **STATICALLY VERIFIED** | 168/168 (100%) symbol CRCs match reference table |
+| **0 mismatch** | **STATICALLY VERIFIED** | 0 symbol CRC mismatches |
+| **0 missing** | **STATICALLY VERIFIED** | 0 missing symbols |
+| **Patch present in object/module** | **STATICALLY VERIFIED** | Disassembly proves `str xzr` and `str wzr` zeroing `iface_combinations` |
+
+### NOT YET VERIFIED ON DEVICE (Runtime Device Validation)
+| Operation / Feature | Status | Details |
+|---|---|---|
+| **Patched wiphy registration** | **NOT YET VERIFIED ON DEVICE** | Awaiting runtime `insmod` of patched module on physical device |
+| **phy1** | **NOT YET VERIFIED ON DEVICE** | Pending appearance of second PHY in `iw phy` |
+| **Monitor mode** | **NOT YET VERIFIED ON DEVICE** | Pending creation and activation of `mon1` |
+| **Packet injection** | **NOT YET VERIFIED ON DEVICE** | Pending verification with injection tools |

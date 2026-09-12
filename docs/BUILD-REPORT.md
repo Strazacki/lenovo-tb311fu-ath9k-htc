@@ -1,7 +1,7 @@
 # Build and Static ABI Validation Report
 
 - **Date of Validation**: 2026-09-12
-- **Result**: **PASS — Statically and ABI-validated for controlled test loading on Lenovo Tab TB311FU**
+- **Result**: **PASS — STATICALLY VERIFIED (Kbuild & ABI compliant for Lenovo Tab TB311FU)**
 - **Target Kernel**: `6.6.57-android15-8-g9dfb2bc0c466-ab12845201-4k`
 - **Compiler**: Android Clang `r510928` / LLVM 18.0.0
 
@@ -120,6 +120,6 @@ BTF contains type and debugging information used by eBPF programs. The absence o
 
 ## 6. Scope of Validation
 
-- **Static Compatibility**: **CONFIRMED / PASS** (vermagic, compiler string, symbol CRCs, ELF relocation).
-- **Driver Workaround Implementation**: **CONFIRMED** (binary disassembly verified).
-- **Runtime Execution on Device**: **NOT YET VERIFIED** (runtime `insmod`, `wiphy_register()`, `phy1` creation, and monitor mode remain to be tested on the physical device).
+- **Build & Static ABI Compliance**: **STATICALLY VERIFIED** (exact vermagic, Android Clang r510928, 168 reference imports, 168 CRC matches, 0 mismatch, 0 missing, patch present in resulting object).
+- **Driver Workaround Implementation**: **STATICALLY VERIFIED** (binary disassembly verified in `htc_drv_init.o`).
+- **Runtime Execution on Device**: **NOT YET VERIFIED ON DEVICE** (patched wiphy registration, phy1, monitor mode, and packet injection have not yet been executed or verified on physical hardware).

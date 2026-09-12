@@ -28,20 +28,37 @@ Atheros AR9271 / ath9k_htc USB Wi-Fi support for Lenovo Tab TB311FU running stoc
 
 ## Status
 
-| Stage / Feature | Status | Notes |
+### CONFIRMED (Hardware & Runtime on Lenovo TB311FU)
+| Operation / Check | Status | Details |
 |---|---|---|
-| **USB enumeration** | **CONFIRMED** | Device `0cf3:9271` detected cleanly over USB OTG |
-| **Firmware upload** | **CONFIRMED** | 51,008 bytes streamed via bulk OUT endpoint |
-| **Firmware 1.4** | **CONFIRMED** | Target reports FW Version: 1.4, FW RMW support: On |
-| **HTC initialization** | **CONFIRMED** | HTC handshake established with 33 credits |
-| **EEPROM/regdomain** | **CONFIRMED** | Calibration parameters and regdomain 0x64 read |
-| **ath9k_htc module loading** | **CONFIRMED** | Base driver loaded without symbol or vermagic errors |
-| **cfg80211 registration bug** | **CONFIRMED** | Unpatched driver fails at `wiphy_register()` with `-EINVAL` |
-| **Patched module build & ABI** | **CONFIRMED / TESTED** | 168/168 matching CRCs, disassembly verified |
-| **Patched wiphy registration** | **NOT YET VERIFIED** | Awaiting device runtime `insmod` confirmation |
-| **phy1 interface** | **NOT YET VERIFIED** | Pending physical device test |
-| **Monitor mode** | **NOT YET VERIFIED** | Pending physical device test |
-| **Packet injection** | **NOT YET VERIFIED** | Pending physical device test |
+| **USB 0cf3:9271 enumeration** | **CONFIRMED** | Atheros AR9271 detected cleanly over USB OTG |
+| **Firmware request** | **CONFIRMED** | Driver requested `ath9k_htc/htc_9271-1.4.0.fw` |
+| **Firmware transfer size 51008** | **CONFIRMED** | 51,008 bytes streamed via bulk OUT endpoint |
+| **FW Version 1.4** | **CONFIRMED** | Target reports FW Version: 1.4, FW RMW support: On |
+| **HTC initialized with 33 credits** | **CONFIRMED** | Host-Target Communication credit handshake established |
+| **EEPROM/regulatory initialization** | **CONFIRMED** | EEPROM regdomain 0x0 read; mapped to regdmn/regpair 0x3a (US) |
+| **Base module loading** | **CONFIRMED** | `ath.ko`, `ath9k_hw.ko`, `ath9k_common.ko` loaded successfully |
+| **Original wiphy_register failure** | **CONFIRMED** | Stock driver failed at `wiphy_register()` with `-EINVAL` (-22) |
+
+### STATICALLY VERIFIED (Build & ABI Validation)
+| Property / Metric | Status | Details |
+|---|---|---|
+| **Patched ath9k_htc.ko build** | **STATICALLY VERIFIED** | Built cleanly via isolated Kbuild |
+| **Exact vermagic** | **STATICALLY VERIFIED** | Matches `6.6.57-android15-8-g9dfb2bc0c466-ab12845201-4k SMP preempt mod_unload modversions aarch64` |
+| **r510928 compiler** | **STATICALLY VERIFIED** | Android Clang r510928 (LLVM 18.0.0) |
+| **168 reference imports** | **STATICALLY VERIFIED** | Exactly 168 imported symbols in `__versions` |
+| **168 CRC matches** | **STATICALLY VERIFIED** | 168/168 (100%) symbol CRCs match reference table |
+| **0 mismatch** | **STATICALLY VERIFIED** | 0 symbol CRC mismatches |
+| **0 missing** | **STATICALLY VERIFIED** | 0 missing symbols |
+| **Patch present in object/module** | **STATICALLY VERIFIED** | Disassembly proves `str xzr` and `str wzr` zeroing `iface_combinations` |
+
+### NOT YET VERIFIED ON DEVICE (Runtime Device Validation)
+| Operation / Feature | Status | Details |
+|---|---|---|
+| **Patched wiphy registration** | **NOT YET VERIFIED ON DEVICE** | Requires runtime `insmod` of patched module on tablet |
+| **phy1** | **NOT YET VERIFIED ON DEVICE** | Pending appearance of second PHY in `iw phy` |
+| **Monitor mode** | **NOT YET VERIFIED ON DEVICE** | Pending creation and activation of `mon1` |
+| **Packet injection** | **NOT YET VERIFIED ON DEVICE** | Pending verification with injection tools |
 
 > [!NOTE]
 > The internal tablet Wi-Fi driver (`wlan_drv_gen4m_6768`, registering `phy0`) does **not** support monitor mode. External USB Wi-Fi via `ath9k_htc` (`phy1`) is intended to bring monitor mode capability to this tablet.
@@ -58,7 +75,11 @@ ath9k_htc 1-1:1.0: ath9k_htc: Transferred FW: ath9k_htc/htc_9271-1.4.0.fw, size:
 ath9k_htc 1-1:1.0: HTC initialized with 33 credits
 ath9k_htc 1-1:1.0: FW Version: 1.4
 ath9k_htc 1-1:1.0: FW RMW support: On
-ath: EEPROM regdomain: 0x64
+ath: EEPROM regdomain: 0x0
+ath: EEPROM indicates default country code should be used
+ath: country maps to regdmn code: 0x3a
+ath: Country alpha2 being used: US
+ath: Regpair used: 0x3a
 ```
 
 However, initialization fails immediately afterward during wireless physical device registration.
@@ -130,7 +151,16 @@ The patch modifies `drivers/net/wireless/ath/ath9k/htc_drv_init.c`:
 
 ---
 
-## Installation
+### Firmware Installation (Confirmed Method on TB311FU)
+
+> [!IMPORTANT]
+> On the Lenovo Tab TB311FU, writing to `/sys/module/firmware_class/parameters/path` **DID NOT WORK**, even after setting SELinux to permissive mode. Do not rely on dynamic runtime firmware path redirection for this tablet.
+>
+> The **confirmed working method** on the physical TB311FU device is using a **Magisk vendor overlay**:
+> ```text
+> /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw
+> ```
+> By deploying the firmware blob through a Magisk module overlay (e.g. placed at `$MODDIR/system/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`), the file appears at `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw` upon boot. The kernel's standard firmware loader immediately locates it, and `ath9k_htc` successfully streams the 51,008-byte v1.4 firmware to the adapter.
 
 ### Method 1: Building from Source Patch
 Apply the patch directly to an Android Common Kernel `android15-6.6.57_r00` tree:
@@ -140,13 +170,9 @@ git apply patches/0001-wifi-ath9k_htc-disable-iface-combinations-on-TB311FU.patc
 See [BUILDING.md](BUILDING.md) for full compilation steps and toolchain requirements.
 
 ### Method 2: Manual Loading for Testing
-1. Download official firmware `htc_9271-1.4.0.fw` (see [release-assets/README.md](release-assets/README.md)) to `/data/local/tmp/ath9271/ath9k_htc/`.
-2. Configure dynamic firmware search path:
-   ```bash
-   su
-   echo -n "/data/local/tmp/ath9271" > /sys/module/firmware_class/parameters/path
-   ```
-3. Load the modules in strict dependency order:
+1. Ensure the firmware image `htc_9271-1.4.0.fw` is available in `/vendor/firmware/ath9k_htc/` (via Magisk overlay).
+2. Transfer the 4 compiled `.ko` files to the tablet (e.g. `/data/local/tmp/ath9271/`).
+3. In a root shell (`su`), insert the modules in strict dependency order:
    ```bash
    cd /data/local/tmp/ath9271
    insmod ath.ko
@@ -154,9 +180,10 @@ See [BUILDING.md](BUILDING.md) for full compilation steps and toolchain requirem
    insmod ath9k_common.ko
    insmod ath9k_htc.ko
    ```
+*(Note: `/sys/module/firmware_class/parameters/path` is a generic desktop Linux fallback; on tested TB311FU it is **NOT WORKING / NOT TESTED AS WORKING**).*
 
 ### Method 3: Magisk Persistence (Systemless Autoload)
-To automatically load the drivers at boot without touching system partitions, use the Magisk module template provided in `magisk/`:
+To automatically load the drivers at boot without touching system partitions and to provide the `/vendor/firmware` overlay, use the Magisk module template in `magisk/`:
 - See [magisk/README.md](magisk/README.md) for packaging and installation details.
 
 ---

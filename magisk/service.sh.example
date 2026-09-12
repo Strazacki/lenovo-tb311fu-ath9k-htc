@@ -20,13 +20,14 @@ until [ "$(getprop sys.boot_completed)" = "1" ]; do
 done
 log_msg "Android boot completed."
 
-# Configure dynamic kernel firmware search path
-FW_DIR="${MODDIR}/firmware"
-if [ -d "$FW_DIR" ] && [ -w /sys/module/firmware_class/parameters/path ]; then
-    echo -n "$FW_DIR" > /sys/module/firmware_class/parameters/path
-    log_msg "Configured firmware search path to: $FW_DIR"
+# Note on Firmware:
+# On Lenovo TB311FU, writing to /sys/module/firmware_class/parameters/path did NOT work.
+# Firmware htc_9271-1.4.0.fw is supplied directly through Magisk's vendor overlay:
+# /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw (placed in system/vendor/firmware/ in the module).
+if [ -f "/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw" ]; then
+    log_msg "Confirmed firmware present at /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw"
 else
-    log_msg "Warning: Could not configure /sys/module/firmware_class/parameters/path"
+    log_msg "Warning: Firmware not found at /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw"
 fi
 
 # Kernel modules directory

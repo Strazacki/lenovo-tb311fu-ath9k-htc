@@ -51,12 +51,12 @@ usb 1-1: Manufacturer: ATHEROS
 ath9k_htc: Firmware ath9k_htc/htc_9271-1.4.0.fw requested
 ```
 
-*Status*: **CONFIRMED** — The driver correctly requests the standard open firmware version 1.4.
+*Status*: **CONFIRMED** — The driver requests open firmware version 1.4. On Lenovo TB311FU, the firmware file is located via the Magisk vendor overlay at `/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`.
 
 ---
 
 ### Phase 3: Firmware Transfer
-The kernel firmware loader retrieves the file and streams it over the bulk OUT endpoint:
+The kernel firmware loader retrieves the file from `/vendor/firmware/ath9k_htc/` and streams it over the bulk OUT endpoint:
 
 ```text
 ath9k_htc 1-1:1.0: ath9k_htc: Transferred FW: ath9k_htc/htc_9271-1.4.0.fw, size: 51008
@@ -90,16 +90,17 @@ ath9k_htc 1-1:1.0: FW RMW support: On
 ---
 
 ### Phase 6: EEPROM & Regulatory Domain Initialization
-The driver reads calibration data from the AR9271 EEPROM:
+The driver reads calibration data and regulatory domain from the AR9271 EEPROM:
 
 ```text
-ath: EEPROM regdomain: 0x64
-ath: EEPROM indicates we should expect a direct regpair map
-ath: Country alpha2 being used: 00
-ath: Regpair used: 0x64
+ath: EEPROM regdomain: 0x0
+ath: EEPROM indicates default country code should be used
+ath: country maps to regdmn code: 0x3a
+ath: Country alpha2 being used: US
+ath: Regpair used: 0x3a
 ```
 
-*Status*: **CONFIRMED** — Radio calibration, MAC address, and regulatory structures loaded cleanly.
+*Status*: **CONFIRMED** — Radio calibration, MAC address, and regulatory domain initialized. The EEPROM reports raw regdomain `0x0`, indicating the default country code fallback should be used. The driver maps this country code to regulatory domain code `0x3a` with alpha2 code `US` and effective regulatory pair (`Regpair used`) `0x3a`. Distinct values `0x0` (EEPROM raw regdomain) and `0x3a` (operational regdmn/regpair) are tracked separately.
 
 ---
 

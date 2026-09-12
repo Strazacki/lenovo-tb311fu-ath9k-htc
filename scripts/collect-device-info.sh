@@ -130,10 +130,17 @@ else
 fi
 
 echo ""
-echo "=== 9. Firmware Loader Search Path ==="
+echo "=== 9. Firmware Files & Search Path ==="
+if [ -f /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw ]; then
+    echo "Found /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw (Magisk vendor overlay confirmed)"
+    ls -l /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw 2>/dev/null || true
+else
+    echo "Notice: /vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw not found"
+fi
+
 if [ -r /sys/module/firmware_class/parameters/path ]; then
     fw_path="$(cat /sys/module/firmware_class/parameters/path 2>/dev/null || echo 'unreadable')"
-    echo "firmware_class.path: '${fw_path}'"
+    echo "firmware_class.path: '${fw_path}' (Note: dynamic path redirection is non-functional on TB311FU)"
 else
     echo "/sys/module/firmware_class/parameters/path not accessible."
 fi

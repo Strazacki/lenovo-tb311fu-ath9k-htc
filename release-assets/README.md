@@ -29,7 +29,7 @@ The following table lists the verified binaries built for Lenovo Tab TB311FU sto
 
 ---
 
-## 3. Official Firmware Acquisition
+## 3. Official Firmware Acquisition & TB311FU Placement
 
 The Atheros AR9271 adapter requires `htc_9271-1.4.0.fw`.
 
@@ -46,6 +46,15 @@ curl -Lo ath9k_htc/htc_9271-1.4.0.fw \
 # Verify SHA256 checksum
 echo "78f7d592a95b419a02fde7440f30c606fc31a871cf0ce150ced40d4857173eb0  ath9k_htc/htc_9271-1.4.0.fw" | sha256sum -c -
 ```
+
+### Installation on Lenovo TB311FU
+On the Lenovo Tab TB311FU, writing to `/sys/module/firmware_class/parameters/path` **DID NOT WORK** (even with SELinux permissive).
+
+The **confirmed working method** is placing the firmware in a Magisk vendor overlay:
+```text
+/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw
+```
+(Placed inside the Magisk module at `$MODDIR/system/vendor/firmware/ath9k_htc/htc_9271-1.4.0.fw`). After reboot, the driver automatically loads the firmware from `/vendor/firmware/`.
 
 ---
 
